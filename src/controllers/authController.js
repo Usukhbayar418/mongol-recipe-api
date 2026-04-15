@@ -64,4 +64,42 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = {register, login};
+const updateUser = async (req, res) => {
+    try {
+        const { username, email } = req.body;
+
+        if(email) {
+            const existingUser = await User.findOne({
+                email,
+                _id: { $ne: req.user._id }
+            });
+            if (existingUser) {
+                return res.status(400).json({message: 'Имэйл аль хэдийн бүртгэлтэй байна'})
+            }
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user._id,
+            { username, email },
+            { new: true, runValidators: true }
+        ).select('-password');
+
+        res.status(200).json({
+            message: 'Мэдээлэл амжилттай шинэчлэгдлээ',
+            user: updatedUser
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+const deleteUser = async (req, res) => {
+    try {
+        await User.findByIdAndDelete(req.user._id);
+        res.status(200).json({message: 'Хэрэглэгч амжилттай устгагдлаа'});
+    } catch (error) {
+        res.status(500).json({message: error.message});
+    }
+};
+
+module.exports = {register, login, deleteUser, updateUser};
